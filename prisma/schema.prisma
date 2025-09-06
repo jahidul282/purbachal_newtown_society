@@ -1,0 +1,116 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---- Enums (top-level, outside any model) ----
+enum OwnershipProofType {
+  LD_TAX_RECEIPT
+  MUTATION_PAPER
+  BDS_KHATIAN
+}
+
+enum PaymentMethod {
+  BKASH
+  BANK
+}
+
+// Management roles
+enum ManagementRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+// User status
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ---- Models ----
+model User {
+  id Int @id @default(autoincrement())
+
+  // Plot info
+  sectorNumber String
+  roadNumber   String
+  plotNumber   String
+  plotSize     String
+
+  // Ownership proof
+  ownershipProofType OwnershipProofType
+  ownershipProofFile String? // store file path/URL
+
+  // Owner info
+  ownerNameEnglish String
+  ownerNameBangla  String
+  contactNumber    String
+  nidNumber        String
+  presentAddress   String
+  permanentAddress String
+  email            String  @unique
+  ownerPhoto       String? // store file path/URL
+
+  // ✅ New field (store hashed password)
+  password String
+  status   UserStatus @default(PENDING)
+
+  // Payment
+  paymentMethod         PaymentMethod
+  bkashTransactionId    String?
+  bkashAccountNumber    String?
+  bankAccountNumberFrom String?
+  paymentReceipt        String? // store file path/URL
+  membershipFee         Int           @default(1020)
+  agreeDataUse          Boolean       @default(false)
+
+  // Meta
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  posts Post[]
+}
+
+model Post {
+  id         Int     @id @default(autoincrement())
+  title      String
+  content    String?
+  published  Boolean @default(false)
+  coverImage String? // optional file path/URL
+
+  // Relations
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+
+  // Meta
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId, createdAt])
+}
+
+// Management users with multiple roles
+model ManagementUser {
+  id       Int      @id @default(autoincrement())
+  photoUrl String?
+  name     String
+  phone    String
+  address  String?
+  role     ManagementRole
+  email    String   @unique
+  password String
+  title    String?
+  created  DateTime @default(now())
+
+  @@index([name, email])
+}
