@@ -42,7 +42,8 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
+  // Exclude all API routes and Next internals; only run on app pages
   matcher: [
-    "/((?!_next/|static/|public/|favicon.ico|api/).*)", // all non-API routes
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };

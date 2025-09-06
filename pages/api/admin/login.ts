@@ -7,8 +7,13 @@ import { prisma } from "@/lib/prisma";
 const ADMIN_COOKIE = "admin_token";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Handle preflight on Vercel if any proxy triggers OPTIONS
+  if (req.method === "OPTIONS") {
+    res.setHeader("Allow", ["POST", "OPTIONS"]);
+    return res.status(204).end();
+  }
   if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
+    res.setHeader("Allow", ["POST", "OPTIONS"]);
     return res.status(405).json({ error: "Method Not Allowed" });
   }
   try {
