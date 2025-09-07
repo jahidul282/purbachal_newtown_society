@@ -45,6 +45,7 @@ model User {
   roadNumber   String
   plotNumber   String
   plotSize     String
+  plotId       String @unique @default(cuid())
 
   // Ownership proof
   ownershipProofType OwnershipProofType
@@ -78,7 +79,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  posts Post[]
 }
 
 model Post {
@@ -90,7 +90,7 @@ model Post {
 
   // Relations
   authorId Int
-  author   User @relation(fields: [authorId], references: [id])
+  author   ManagementUser @relation(fields: [authorId], references: [id])
 
   // Meta
   createdAt DateTime @default(now())
@@ -111,6 +111,9 @@ model ManagementUser {
   password String
   title    String?
   created  DateTime @default(now())
+
+  // Relations
+  posts Post[]
 
   @@index([name, email])
 }
