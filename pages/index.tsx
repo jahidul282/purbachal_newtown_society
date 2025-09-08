@@ -72,7 +72,7 @@ export default function HomePage() {
   const MEMBERSHIP_FEE = 1020; // BDT
   const BKASH_NUMBER = "01625358082";
   const BANK = {
-    name: "Sonali Bank Limited, Dhaka University Branch",
+    name: "Sonali Bank Limited, Purbachal Branch",
     accountName: "Purbachal Newtown Society",
     accountNumber: "4405702001730",
     routingNumber: "200271750",

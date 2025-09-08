@@ -650,8 +650,16 @@ export default function PnsMembershipForm() {
                 variant="filled"
                 color="success"
               />
-              <Chip label={`bKash: ${BKASH_NUMBER}`} variant="outlined" />
-              <Chip label={`Bank: ${BANK.accountNumber}`} variant="outlined" />
+              <Chip
+                label={`bKash: ${BKASH_NUMBER}`}
+                variant="filled"
+                sx={{ bgcolor: '#fde7f2', color: '#b31259', borderColor: 'transparent' }}
+              />
+              <Chip
+                label={`Bank: ${BANK.accountNumber}`}
+                variant="filled"
+                sx={{ bgcolor: '#e8f0fe', color: '#0b3d91', borderColor: 'transparent' }}
+              />
             </Stack>
           </Stack>
         </Container>
