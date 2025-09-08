@@ -40,6 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxAge: 60 * 60 * 24 * 7,
     });
     res.setHeader("Set-Cookie", cookie);
+    const accepts = String(req.headers.accept || "");
+    const ctype = String((req.headers as any)["content-type"] || "");
+    const wantsHtml = accepts.includes("text/html") || ctype.includes("application/x-www-form-urlencoded");
+    if (wantsHtml) {
+      res.statusCode = 303;
+      res.setHeader("Location", "/dashboard");
+      return res.end();
+    }
     return res.status(200).json({ ok: true, admin: { id: admin.id, email: admin.email, name: (admin as any).name, role: admin.role } });
   } catch (e: any) {
     console.error(e);

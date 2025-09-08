@@ -72,10 +72,40 @@ export default function AdminLoginPage() {
         <Card variant="outlined" sx={{ borderRadius: 3, boxShadow: 1 }}>
           <CardHeader title="Management Login" subheader="Admins & staff" />
           <CardContent>
-            <Box component="form" onSubmit={onSubmit} noValidate>
+            <Box
+              component="form"
+              onSubmit={onSubmit}
+              action="/api/admin/login"
+              method="post"
+              noValidate
+            >
               <Stack spacing={2}>
-                <TextField label="Email" size="small" type="email" value={email} onChange={e => setEmail(e.target.value)} error={!!email && !emailOk(email)} helperText={!!email && !emailOk(email) ? "Enter a valid email" : " "} fullWidth required />
-                <TextField label="Password" size="small" type="password" value={password} onChange={e => setPassword(e.target.value)} helperText={password && password.length < 6 ? "Min 6 characters" : " "} error={!!password && password.length < 6} fullWidth required />
+                <TextField
+                  name="email"
+                  label="Email"
+                  size="small"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  error={!!email && !emailOk(email)}
+                  helperText={!!email && !emailOk(email) ? "Enter a valid email" : " "}
+                  autoComplete="username"
+                  fullWidth
+                  required
+                />
+                <TextField
+                  name="password"
+                  label="Password"
+                  size="small"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  helperText={password && password.length < 6 ? "Min 6 characters" : " "}
+                  error={!!password && password.length < 6}
+                  autoComplete="current-password"
+                  fullWidth
+                  required
+                />
                 <Button type="submit" variant="contained" disabled={submitting || !emailOk(email) || password.length < 6} startIcon={submitting ? <CircularProgress size={18} /> : undefined}>
                   {submitting ? "Signing in…" : "Login"}
                 </Button>
@@ -93,4 +123,3 @@ export default function AdminLoginPage() {
     </>
   );
 }
-

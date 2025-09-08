@@ -135,9 +135,16 @@ export default function LoginForm() {
         <Card variant="outlined" sx={{ borderRadius: 3, boxShadow: 1 }}>
           <CardHeader title="Login" subheader="Sign in to your account" />
           <CardContent>
-            <Box component="form" onSubmit={onSubmit} noValidate>
+            <Box
+              component="form"
+              onSubmit={onSubmit}
+              action="/api/auth/login"
+              method="post"
+              noValidate
+            >
               <Stack spacing={2}>
                 <TextField
+                  name="email"
                   label="Email"
                   size="small"
                   type="email"
@@ -147,10 +154,12 @@ export default function LoginForm() {
                   helperText={
                     !!email && !emailOk(email) ? "Enter a valid email" : " "
                   }
+                  autoComplete="username"
                   fullWidth
                   required
                 />
                 <TextField
+                  name="password"
                   label="Password"
                   size="small"
                   type="password"
@@ -160,6 +169,7 @@ export default function LoginForm() {
                     password && password.length < 6 ? "Min 6 characters" : " "
                   }
                   error={!!password && password.length < 6}
+                  autoComplete="current-password"
                   fullWidth
                   required
                 />

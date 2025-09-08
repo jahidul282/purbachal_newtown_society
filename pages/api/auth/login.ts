@@ -61,6 +61,14 @@ export default async function handler(
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
     res.setHeader("Set-Cookie", cookie);
+    const accepts = String(req.headers.accept || "");
+    const ctype = String((req.headers as any)["content-type"] || "");
+    const wantsHtml = accepts.includes("text/html") || ctype.includes("application/x-www-form-urlencoded");
+    if (wantsHtml) {
+      res.statusCode = 303;
+      res.setHeader("Location", "/profile");
+      return res.end();
+    }
 
     return res.status(200).json({ ok: true, user: payload });
   } catch (e: any) {
