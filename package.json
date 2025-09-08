@@ -2,16 +2,16 @@
     "name": "my-next-app",
     "version": "0.1.0",
     "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "seed:admin": "node scripts/seed-admin.js"
-  },
-  "prisma": {
-    "seed": "node scripts/seed-admin.js"
-  },
+    "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "seed:admin": "node scripts/seed-admin.js"
+    },
+    "prisma": {
+        "seed": "node scripts/seed-admin.js"
+    },
     "dependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",
@@ -21,7 +21,7 @@
         "@mui/material": "^7.0.2",
         "@mui/x-data-grid": "^7.29.9",
         "@mui/x-date-pickers": "^8.10.0",
-        "@prisma/client": "^6.14.0",
+        "@prisma/client": "^6.15.0",
         "axios": "^1.9.0",
         "bcryptjs": "^3.0.2",
         "cooki": "^0.2.0",
@@ -53,7 +53,7 @@
         "@types/react-dom": "^19",
         "eslint": "^9",
         "eslint-config-next": "15.3.0",
-        "prisma": "^6.14.0",
+        "prisma": "^6.15.0",
         "typescript": "^5"
     }
 }

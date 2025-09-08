@@ -301,8 +301,8 @@ function validateField(key: Key, v: FormState): string | undefined {
       if (!nonEmpty((v as any)[key])) return `${LABELS[key]} is required`;
       return;
     case "password":
-      if (!nonEmpty(v.password) || v.password.length < 6)
-        return "Password must be at least 6 characters";
+      if (!nonEmpty(v.password) || v.password.length < 8)
+        return "Password must be at least 8 characters";
       return;
     case "permanentAddress":
       if (!nonEmpty((v as any)[key])) return `${LABELS[key]} is required`;
@@ -442,7 +442,7 @@ export default function PnsMembershipForm() {
       nonEmpty(v.permanentAddress) &&
       nonEmpty(v.email) &&
       emailOk(v.email) &&
-      nonEmpty(v.password) && v.password.length >= 6 &&
+      nonEmpty(v.password) && v.password.length >= 8 &&
       v.ownerPhoto &&
       v.paymentReceipt &&
       v.agreeDataUse &&
@@ -551,6 +551,7 @@ export default function PnsMembershipForm() {
           const d = err.response?.data as any;
           if (typeof d === "string") return d;
           if (d?.message) return d.message;
+          if (d?.error) return d.error;
           return err.message;
         }
         return (err as Error).message;

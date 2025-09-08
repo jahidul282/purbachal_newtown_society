@@ -1,5 +1,16 @@
 #!/usr/bin/env node
-/* Seed an initial ManagementUser (ADMIN). Idempotent via upsert by email. */
+/*
+  Seed an initial ManagementUser (ADMIN). Idempotent via upsert by email.
+  Reads credentials from env vars with safe defaults for local dev.
+
+  Env vars (optional):
+  - ADMIN_EMAIL
+  - ADMIN_PASSWORD
+  - ADMIN_NAME
+  - ADMIN_PHONE
+  - ADMIN_TITLE
+*/
+
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('../lib/generated/prisma');
 
