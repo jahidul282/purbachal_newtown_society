@@ -27,6 +27,7 @@ import {
   Chip,
 } from "@mui/material";
 import Link from "next/link";
+import Head from "next/head";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloseIcon from "@mui/icons-material/Close";
@@ -292,9 +293,13 @@ function validateField(key: Key, v: FormState): string | undefined {
     case "roadNumber":
     case "plotNumber":
     case "plotSize":
+      if (!nonEmpty((v as any)[key])) return `${LABELS[key]} is required`;
+      return;
     case "ownerNameEnglish":
     case "ownerNameBangla":
     case "presentAddress":
+      if (!nonEmpty((v as any)[key])) return `${LABELS[key]} is required`;
+      return;
     case "password":
       if (!nonEmpty(v.password) || v.password.length < 6)
         return "Password must be at least 6 characters";
@@ -437,6 +442,7 @@ export default function PnsMembershipForm() {
       nonEmpty(v.permanentAddress) &&
       nonEmpty(v.email) &&
       emailOk(v.email) &&
+      nonEmpty(v.password) && v.password.length >= 6 &&
       v.ownerPhoto &&
       v.paymentReceipt &&
       v.agreeDataUse &&
@@ -578,6 +584,13 @@ export default function PnsMembershipForm() {
 
   return (
     <>
+      <Head>
+        <title>Membership Registration | Purbachal Newtown Society</title>
+        <meta
+          name="description"
+          content="Register for Purbachal Newtown Society membership and submit your ownership details and payment receipt."
+        />
+      </Head>
       {/* 🔹 HERO with overlay */}
       <Box
         sx={{
@@ -782,10 +795,10 @@ export default function PnsMembershipForm() {
                     required
                     label="Upload ownership proof (PDF/JPG/PNG)"
                     file={v.ownershipProofFile}
-                    onChange={f => {
-                      setField("ownershipProofFile", f);
-                      markTouched("ownershipProofFile");
-                    }}
+                      onChange={f => {
+                        // setField already marks touched and validates
+                        setField("ownershipProofFile", f);
+                      }}
                     helper={"Max ~10MB. Clear scan or photo."}
                     errorText={showErr("ownershipProofFile")}
                   />
@@ -918,8 +931,8 @@ export default function PnsMembershipForm() {
                       accept="image/*"
                       file={v.ownerPhoto}
                       onChange={f => {
+                        // setField already marks touched and validates
                         setField("ownerPhoto", f);
-                        markTouched("ownerPhoto");
                       }}
                       helper={"Clear passport-style photo preferred (≤10MB)."}
                       errorText={showErr("ownerPhoto")}
@@ -1024,8 +1037,8 @@ export default function PnsMembershipForm() {
                         }
                         file={v.paymentReceipt}
                         onChange={f => {
+                          // setField already marks touched and validates
                           setField("paymentReceipt", f);
-                          markTouched("paymentReceipt");
                         }}
                         helper={"PDF/JPG/PNG (≤10MB)"}
                         errorText={showErr("paymentReceipt")}
