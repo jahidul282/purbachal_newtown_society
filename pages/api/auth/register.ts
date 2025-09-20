@@ -12,6 +12,53 @@ export const config = {
 
 // ----- uploads dir -----
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+const RAW_ALLOWED_ORIGINS = [
+  process.env.CORS_ALLOW_ORIGIN,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : undefined,
+].filter(Boolean) as string[];
+
+const ALLOWED_ORIGINS = RAW_ALLOWED_ORIGINS
+  .flatMap(value => value.split(","))
+  .map(value => value.trim())
+  .filter(Boolean);
+
+const ALLOW_ANY_ORIGIN =
+  ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes("*");
+
+const BLOB_UPLOAD_PREFIX = process.env.BLOB_UPLOAD_PREFIX || "pns-membership";
+const BLOB_ACCESS_LEVEL =
+  process.env.BLOB_ACCESS_LEVEL === "private" ? "private" : "public";
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const HAS_BLOB_TOKEN = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+
+function resolveAllowedOrigin(originHeader?: string | null): string {
+  if (ALLOW_ANY_ORIGIN) {
+    return originHeader ?? "*";
+  }
+
+  if (originHeader && ALLOWED_ORIGINS.includes(originHeader)) {
+    return originHeader;
+  }
+
+  return ALLOWED_ORIGINS[0] ?? originHeader ?? "*";
+}
+
+function applyCors(req: NextApiRequest, res: NextApiResponse) {
+  const originHeader = req.headers.origin ?? null;
+  const origin = resolveAllowedOrigin(originHeader);
+
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", process.env.CORS_ALLOW_HEADERS || "Content-Type, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("Vary", "Origin");
+}
+
 function ensureUploadsDir() {
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -22,32 +69,70 @@ function pickFile(f: any): any | null {
   return Array.isArray(f) ? (f.length ? f[0] : null) : f;
 }
 
-// move temp file to /public/uploads and return public url
-function moveToUploads(input: any, fieldName: string): string | null {
+// Persist upload either locally (dev) or to Vercel Blob in production
+async function persistFile(input: any, fieldName: string): Promise<string | null> {
   const f = pickFile(input);
   if (!f) return null;
-
-  ensureUploadsDir();
 
   const ext = path.extname(f.originalFilename || "");
   const base = (f.originalFilename || "file")
     .toString()
     .replace(/\s+/g, "_")
     .slice(0, 40);
-  const safeName = `${Date.now()}-${fieldName}-${base}${ext}`;
-  const dest = path.join(UPLOAD_DIR, safeName);
-
-  // formidable v2/v3: f.filepath, older: f.path
   const tmp: string | undefined = (f as any).filepath || (f as any).path;
+  const mimetype: string | undefined = (f as any).mimetype || (f as any).type;
+
   if (!tmp || typeof tmp !== "string") {
-    // Extra guard to avoid undefined oldPath
     return null;
   }
+
+  if (HAS_BLOB_TOKEN) {
+    const key = `${BLOB_UPLOAD_PREFIX}/${Date.now()}-${fieldName}-${base}${ext}`.replace(/\+/g, "/");
+    const uploadUrl = `https://blob.vercel-storage.com/${key}?access=${BLOB_ACCESS_LEVEL}`;
+    const fileBuffer = fs.readFileSync(tmp);
+
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        "Content-Type": mimetype || "application/octet-stream",
+      },
+      body: fileBuffer,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(
+        `Failed to upload ${fieldName} to blob storage (${response.status}): ${detail}`
+      );
+    }
+
+    const data = (await response.json()) as { url?: string };
+    try {
+      fs.unlinkSync(tmp);
+    } catch {
+      // ignore cleanup errors
+    }
+    if (!data?.url) {
+      throw new Error(`Blob upload for ${fieldName} did not return a URL.`);
+    }
+    return data.url;
+  }
+
+  if (IS_VERCEL) {
+    throw new Error(
+      "File uploads require BLOB_READ_WRITE_TOKEN when running on Vercel. Configure Vercel Blob and set the token."
+    );
+  }
+
+  ensureUploadsDir();
+
+  const safeName = `${Date.now()}-${fieldName}-${base}${ext}`;
+  const dest = path.join(UPLOAD_DIR, safeName);
 
   try {
     fs.renameSync(tmp, dest);
   } catch (err: any) {
-    // cross-device move fallback
     if (err?.code === "EXDEV") {
       fs.copyFileSync(tmp, dest);
       fs.unlinkSync(tmp);
@@ -55,6 +140,7 @@ function moveToUploads(input: any, fieldName: string): string | null {
       throw err;
     }
   }
+
   return `/uploads/${safeName}`;
 }
 
@@ -68,8 +154,15 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  applyCors(req, res);
+
+  if (req.method === "OPTIONS") {
+    res.setHeader("Allow", ["POST", "OPTIONS"]);
+    return res.status(204).end();
+  }
+
   if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
+    res.setHeader("Allow", ["POST", "OPTIONS"]);
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
@@ -109,12 +202,12 @@ export default async function handler(
     const passwordHash = bcrypt.hashSync(rawPassword, 10);
 
     // 3) save files
-    const ownershipProofUrl = moveToUploads(
+    const ownershipProofUrl = await persistFile(
       files?.ownershipProofFile,
       "ownershipProof"
     );
-    const ownerPhotoUrl = moveToUploads(files?.ownerPhoto, "ownerPhoto");
-    const paymentReceiptUrl = moveToUploads(
+    const ownerPhotoUrl = await persistFile(files?.ownerPhoto, "ownerPhoto");
+    const paymentReceiptUrl = await persistFile(
       files?.paymentReceipt,
       "paymentReceipt"
     );
